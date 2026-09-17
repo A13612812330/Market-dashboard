@@ -24,7 +24,7 @@
 - Git 或 Codex
 
 ```powershell
-git clone https://github.com/A13612812330/komo-market-dashboard.git
+git clone https://github.com/A13612812330/Market-dashboard.git
 cd komo-market-dashboard
 npm ci
 python -m pip install -r requirements.txt
