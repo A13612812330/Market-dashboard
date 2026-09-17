@@ -1,0 +1,17 @@
+{
+  "name": "komo-market-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "本地 A 股与 ETF 行情、研究、自选和模拟交易工作台。",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs",
+    "check:frontend": "node --check public/app.js",
+    "collect": "python scripts/collect_market_data.py",
+    "maintenance": "node scripts/maintenance.mjs"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

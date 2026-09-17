@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="description" content="Komo Market Dashboard - 全球市场与 A 股筛选工作台，提供实时行情数据、板块资金流、ETF 强弱分析、条件筛选与模拟交易。" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Komo Market Dashboard</title>
+    <link rel="stylesheet" href="/styles.css?v=20260814-beginner-strategy-v1" />
+  </head>
+  <body>
+    <section id="loginGate" class="login-gate" aria-labelledby="loginTitle">
+      <form id="loginForm" class="login-card">
+        <div class="brand-mark">KM</div>
+        <p class="eyebrow">Market signal cockpit</p>
+        <h2 id="loginTitle">登录行情工作台</h2>
+        <label>用户名<input id="loginUsername" autocomplete="username" required /></label>
+        <label>密码<input id="loginPassword" type="password" autocomplete="current-password" required /></label>
+        <button class="primary-button" type="submit">登录</button>
+        <p id="loginError" class="login-error" aria-live="polite"></p>
+      </form>
+    </section>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">KM</div>
+          <div>
+            <strong>Komo Market</strong>
+            <span>真实行情工作台</span>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav-item active" data-view="home">首页</button>
+          <button class="nav-item" data-view="paper">模拟操作</button>
+          <button class="nav-item" data-view="screener">条件筛选</button>
+          <button class="nav-item" data-view="watchlist">行情自选</button>
+          <button class="nav-item" data-view="private">研究中心</button>
+          <button id="adminNav" class="nav-item" data-view="admin" hidden>用户管理</button>
+          <button class="nav-item" data-view="settings">设置</button>
+        </nav>
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>真实数据优先</strong>
+          <small>免费源失败时显示缓存或暂无数据。</small>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Market signal cockpit</p>
+            <h1>全球市场与 A 股筛选工作台</h1>
+          </div>
+          <div class="top-actions">
+            <span id="authUser" class="status-pill"></span>
+            <button id="logoutButton" class="ghost-button" type="button">退出</button>
+            <span id="lanReadonlyBanner" class="status-pill lan-readonly-banner" hidden>局域网只读</span>
+            <span id="freshness">更新时间 --</span>
+            <span id="syncCountdown" class="sync-countdown">下次同步 --</span>
+            <button id="refreshBtn" class="ghost-button">刷新</button>
+          </div>
+        </header>
+
+        <section id="home" class="view active">
+          <section class="toolbar">
+            <div class="segment" id="regionTabs"></div>
+            <div class="segment" id="windowTabs"></div>
+          </section>
+          <section class="data-note" id="windowHint"></section>
+          <section class="a-share-core" id="homeCoreIndexes"></section>
+          <section class="market-brief" id="marketBrief"></section>
+          <section class="home-focus">
+            <article class="panel trend-panel">
+              <div class="panel-title">
+                <div>
+                  <h2>A股趋势图</h2>
+                  <span id="trendMeta">正在读取真实行情</span>
+                </div>
+                <label class="select-label">
+                  标的
+                  <select id="trendSelect"></select>
+                </label>
+              </div>
+              <div class="chart-toolbar" id="chartToolbar">
+                <div class="chart-tool-group" role="group" aria-label="图表类型">
+                  <span class="chart-group-label">图表</span>
+                  <div class="chart-mode-group">
+                    <button type="button" class="chart-mode active" data-chart-mode="auto">自动</button>
+                    <button type="button" class="chart-mode" data-chart-mode="line">分时</button>
+                    <button type="button" class="chart-mode" data-chart-mode="candle">K线</button>
+                  </div>
+                </div>
+                <div class="chart-tool-group" role="group" aria-label="图表指标">
+                  <span class="chart-group-label">指标</span>
+                  <div class="chart-indicator-group">
+                    <button type="button" class="chart-indicator active" data-indicator="ma">MA</button>
+                    <button type="button" class="chart-indicator" data-indicator="rsi">RSI</button>
+                    <button type="button" class="chart-indicator" data-indicator="macd">MACD</button>
+                  </div>
+                </div>
+                <div class="chart-tool-status"><span class="status-dot"></span><span id="chartDataHint" class="chart-data-hint">历史周期优先使用真实 K 线</span></div>
+              </div>
+              <div class="chart-wrap">
+                <svg id="trendChart" viewBox="0 0 760 260" role="img" aria-label="趋势图"></svg>
+              </div>
+            </article>
+            <article class="panel home-side-panel">
+              <div class="panel-title">
+                <div>
+                  <h2>A股涨跌榜</h2>
+                  <span>首页只展示核心榜单</span>
+                </div>
+              </div>
+              <section class="ranking-split compact-rankings" id="rankingSplit"></section>
+              <div class="pulse-list" id="aSharePulse"></div>
+            </article>
+          </section>
+          <section class="home-summary-grid">
+            <article class="panel home-summary-panel">
+              <div class="panel-title"><h2>板块资金摘要</h2><span>点击进入完整行情</span></div>
+              <div id="homeSectorSummary" class="summary-list"></div>
+            </article>
+            <article class="panel home-summary-panel">
+              <div class="panel-title"><h2>ETF强弱</h2><span>成交额与涨跌幅</span></div>
+              <div id="homeEtfSummary" class="summary-list"></div>
+            </article>
+            <article class="panel home-summary-panel">
+              <div class="panel-title"><h2>海外观察</h2><span>辅助参考</span></div>
+              <div id="homeGlobalSummary" class="summary-list"></div>
+            </article>
+          </section>
+          <section class="home-actions">
+            <button class="ghost-button view-link" data-target-view="screener">进入条件筛选</button>
+            <button class="ghost-button view-link" data-target-view="private">查看市场报告</button>
+          </section>
+        </section>
+
+        <section id="market-full" class="home-market-section">
+          <section class="market-full-head">
+            <div>
+              <p class="eyebrow">Full market board</p>
+              <h2>行情工作区</h2>
+              <span>这里看 A股、ETF、板块资金和板块关联；指数趋势列表集中在下方唯一的“指数与周期行情”区域。</span>
+            </div>
+            <div class="market-full-actions">
+              <div class="segment compact" id="sectorViewTabs">
+                <button class="active" data-sector-view="cloud">板块云图</button>
+                <button data-sector-view="rank">板块排行</button>
+                <button data-sector-view="detail">板块详情</button>
+              </div>
+            </div>
+          </section>
+          <section class="market-full-summary" id="marketFullSummary"></section>
+          <section class="panel sector-cloud-panel" id="sectorCloudView">
+            <div class="panel-title">
+              <div>
+                <h2>板块云图</h2>
+                <span id="sectorCloudMeta">面积按净流入绝对值，颜色区分资金方向；点击查看成分股、ETF和资讯</span>
+              </div>
+              <div class="sector-cloud-controls">
+                <div class="segment compact" id="sectorTypeTabs">
+                  <button class="active" data-sector-type="industry">行业</button>
+                  <button data-sector-type="concept">概念</button>
+                  <button data-sector-type="theme">主题</button>
+                </div>
+                <select id="sectorCloudSort" aria-label="板块云图排序">
+                  <option value="net_inflow" selected>净流入</option>
+                  <option value="change_pct">涨跌幅</option>
+                  <option value="amount">成交额</option>
+                  <option value="heat_score">热度</option>
+                </select>
+              </div>
+            </div>
+            <div id="sectorCloud" class="sector-cloud"></div>
+          </section>
+          <section class="market-lens">
+            <article class="panel flow-panel" id="sectorRankView">
+              <div class="panel-title">
+                <div>
+                  <h2>板块资金流</h2>
+                  <span id="sectorFlowMeta">净流入、涨跌幅、涨跌家数</span>
+                </div>
+                <div class="market-filter-line">
+                  <label class="sr-only" for="sectorSearch">筛选板块</label><input id="sectorSearch" placeholder="筛选板块/龙头" />
+                  <div class="segment compact" id="sectorRankTypeTabs">
+                    <button class="active" data-sector-rank-type="industry">行业</button>
+                    <button data-sector-rank-type="concept">概念</button>
+                    <button data-sector-rank-type="theme">主题</button>
+                  </div>
+                  <label class="select-label">
+                    排序
+                    <select id="sectorSort">
+                      <option value="change_pct" selected>涨跌幅</option>
+                      <option value="net_inflow">净流入</option>
+                      <option value="up_count">上涨家数</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div id="sectorFlowList" class="sector-flow-list"></div>
+              <div id="sectorPager" class="pager"></div>
+            </article>
+            <article class="panel rhythm-panel">
+              <div class="panel-title">
+                <div>
+                  <h2>数据节奏</h2>
+                  <span>展示当前页面的数据新鲜度和使用场景</span>
+                </div>
+              </div>
+              <div class="timeline" id="marketRhythm"></div>
+            </article>
+          </section>
+          <section class="panel etf-panel">
+            <div class="panel-title">
+              <div>
+                <h2>ETF 观察</h2>
+                <span id="etfMeta">宽基、行业、跨境 ETF 资金与涨跌</span>
+              </div>
+              <div class="etf-controls">
+                <label class="sr-only" for="etfSearch">筛选 ETF</label><input id="etfSearch" placeholder="筛选 ETF/代码/跟踪" />
+                <div class="segment compact" id="etfTabs"></div>
+                <label class="select-label">
+                  排序
+                  <select id="etfSort">
+                    <option value="net_inflow">净流入</option>
+                    <option value="change_pct">涨跌幅（当前周期）</option>
+                    <option value="amount">成交额</option>
+                  </select>
+                </label>
+                <label class="select-label">每页<select id="etfPageSize"><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label>
+              </div>
+            </div>
+            <div id="etfGrid" class="etf-grid"></div>
+            <div id="etfPager" class="pager"></div>
+          </section>
+          <section class="panel index-board-panel">
+            <div class="panel-title">
+              <div>
+                <h2>指数与周期行情</h2>
+                <span id="indexMeta">A股指数为主，海外指数作为辅助；点击卡片可切换首页趋势图</span>
+              </div>
+              <div class="market-filter-line">
+                <label class="sr-only" for="indexSearch">筛选指数</label><input id="indexSearch" placeholder="筛选指数/代码/市场" />
+                <label class="select-label">
+                  排序
+                  <select id="marketSort">
+                    <option value="change_pct">涨跌幅</option>
+                    <option value="trend_score">趋势强弱</option>
+                    <option value="updated_at">更新时间</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="index-grid" id="indexGrid"></div>
+          </section>
+        </section>
+
+        <section id="paper" class="view">
+          <div class="paper-account-float">
+            <label>当前账户<select id="paperAccountSelect"><option value="">尚未创建账户</option></select></label>
+            <span>切换账户后，策略配置、持仓和操作日志会同步更新。</span>
+          </div>
+          <section class="panel paper-account-panel">
+            <div class="panel-title">
+              <div>
+                <h2>一、账户</h2>
+                <span>先创建或选择模拟账户；账户创建不会自动绑定策略，也不会开启自动交易。</span>
+              </div>
+            </div>
+            <div class="paper-setup-form">
+              <label>账户名称<input id="paperAccountName" type="text" placeholder="例如：ETF稳健账户" /></label>
+              <label>初始资金（元）<input id="paperInitialCash" type="number" min="1000" step="1000" placeholder="例如：100000" /></label>
+              <button id="createPaperAccount" class="primary-button paper-create-action">创建模拟账户</button>
+              <button id="resetPaperAccount" class="ghost-button paper-reset-action">重置模拟账户</button>
+              <button id="deletePaperAccount" class="ghost-button danger-button paper-delete-action">删除当前账户</button>
+            </div>
+          </section>
+          <section class="panel paper-strategy-panel">
+            <div class="panel-title">
+              <div>
+                <h2>二、策略与自动交易</h2>
+                <span>先选择策略并保存，确认规则后再单独开启自动交易；所有操作仍是本地纸面交易。</span>
+              </div>
+              <div class="strategy-help"><button id="paperStrategyHelp" class="status-pill" type="button">查看策略</button></div>
+            </div>
+            <div class="paper-setup-form paper-strategy-form">
+              <label>我想怎么做<select id="paperStrategySelect"><option value="trend">跟着趋势做</option><option value="reversal">低位反弹观察</option><option value="etf">ETF轮动</option><option value="custom">按我的条件</option></select></label>
+              <label class="paper-watchlist-field">只看这些标的（可选）<input id="paperWatchlist" type="text" placeholder="留空由策略挑选，或载入行情自选" /></label>
+              <div class="paper-watchlist-actions"><button id="loadPaperWatchlist" class="ghost-button" type="button">载入行情自选</button><button id="clearPaperWatchlist" class="text-button" type="button">清空范围</button></div>
+              <button id="runPaperStrategy" class="primary-button paper-run-action">运行一次策略</button>
+              <button id="dryRunPaperStrategy" class="ghost-button paper-run-action" type="button">试跑一次</button>
+            </div>
+            <div id="paperWatchlistChips" class="paper-watchlist-chips" aria-live="polite"></div>
+            <section id="paperStrategySummary" class="paper-strategy-summary" aria-live="polite"></section>
+            <section class="paper-risk-profile" aria-labelledby="paperRiskProfileTitle">
+              <div><strong id="paperRiskProfileTitle">风险档位</strong><span id="paperRiskProfileHint">选择后才会调整仓位与退出规则。</span></div>
+              <div class="paper-risk-profile-options" role="group" aria-label="模拟风险档位">
+                <button type="button" data-paper-risk-profile="steady">稳健</button>
+                <button type="button" data-paper-risk-profile="balanced">平衡</button>
+                <button type="button" data-paper-risk-profile="active">主动</button>
+              </div>
+            </section>
+            <details class="paper-strategy-editor">
+              <summary>高级策略参数（不改也能运行）</summary>
+              <div class="paper-editor-toolbar"><label>策略名称<input id="paperStrategyName" placeholder="例如：我的趋势策略" /></label><label>策略说明<input id="paperStrategyDescription" placeholder="说明这套规则适合什么场景" /></label><button id="clonePaperStrategy" class="ghost-button" type="button">复制为自定义</button><button id="savePaperStrategy" class="primary-button" type="button">保存策略</button><button id="deletePaperStrategy" class="ghost-button danger-button" type="button" disabled>删除自定义</button><button id="runPaperBacktest" class="ghost-button" type="button">验证当前策略</button></div>
+              <div class="paper-rule-grid">
+                <label class="toggle-line"><input id="paperRuleLongTrend" type="checkbox" /> 启用长周期均线参考</label>
+                <label>最低涨幅 %<input id="paperRuleMinChange" type="number" step="0.1" /></label><label>最高涨幅 %<input id="paperRuleMaxChange" type="number" step="0.1" /></label><label>最低量比<input id="paperRuleMinVolume" type="number" step="0.1" min="0" /></label><label>最低换手 %<input id="paperRuleMinTurnover" type="number" step="0.1" min="0" placeholder="不限" /></label><label>最高换手 %<input id="paperRuleMaxTurnover" type="number" step="0.1" min="0" placeholder="不限" /></label><label>最低成交额<input id="paperRuleMinAmount" type="number" step="1000000" min="0" placeholder="元" /></label><label>RSI最高值<input id="paperRuleMaxRsi" type="number" step="1" min="1" max="99" placeholder="不限" /></label><label>最小回撤 %<input id="paperRuleMinDrawdown" type="number" step="0.5" max="0" placeholder="例如 -20" /></label><label>最大回撤 %<input id="paperRuleMaxDrawdown" type="number" step="0.5" max="0" placeholder="例如 -6" /></label><label>最低评分<input id="paperRuleMinScore" type="number" step="1" min="0" max="100" placeholder="不限" /></label><label class="toggle-line"><input id="paperRuleRebound" type="checkbox" /> 需要止跌反弹确认</label><label>单票仓位 %<input id="paperRulePerPosition" type="number" step="1" min="1" max="100" /></label><label>总仓位上限 %<input id="paperRuleMaxExposure" type="number" step="1" min="1" max="100" /></label><label>最大持仓数<input id="paperRuleMaxPositions" type="number" step="1" min="1" max="100" /></label><label>止损 %<input id="paperRuleSellStop" type="number" step="0.1" max="0" /></label><label>止盈 %<input id="paperRuleTakeProfit" type="number" step="0.1" min="0" /></label><label>移动止盈 %<input id="paperRuleTrailingStop" type="number" step="0.1" min="0" /></label><label>最大持仓天数<input id="paperRuleMaxHoldingDays" type="number" step="1" min="0" /></label><label>同票冷却分钟<input id="paperRuleCooldown" type="number" step="5" min="0" /></label><label class="toggle-line"><input id="paperRuleMarketGate" type="checkbox" /> 启用大盘环境过滤</label><label>大盘最低涨跌 %<input id="paperRuleMinMarketChange" type="number" step="0.1" /></label></div>
+              <div class="paper-rule-grid paper-event-rule-grid"><label class="toggle-line rule-section-toggle"><input id="paperRuleIntradayGate" type="checkbox" /> 显示盘中形态参考</label><small class="rule-reference-note">仅记录低开、高开、封板和尾盘形态，用于研究与复盘；不会直接触发买卖。</small><label>早盘参考分钟<input id="paperRuleOpeningNoAdd" type="number" min="0" max="120" /></label><label>低开阈值 %<input id="paperRuleLowOpen" type="number" step="0.1" max="0" /></label><label>低开观察分钟<input id="paperRuleLowOpenMinutes" type="number" min="1" max="60" /></label><label>高开观察阈值 %<input id="paperRuleHighReduce" type="number" step="0.1" min="0" /></label><label>高开观察分钟<input id="paperRuleHighReduceMinutes" type="number" min="1" max="120" /></label><label>高开风险阈值 %<input id="paperRuleHighClear" type="number" step="0.1" min="0" /></label><label>高开风险观察分钟<input id="paperRuleHighClearMinutes" type="number" min="1" max="120" /></label><label>封板量比参考<input id="paperRuleLargeVolume" type="number" step="0.1" min="0" /></label><label>尾盘形态阈值 %<input id="paperRuleTailMove" type="number" step="0.1" min="0.1" /></label></div>
+              <small id="paperStrategyEditorMeta">默认策略可查看；修改默认策略前请先复制为自定义。</small>
+              <div id="paperBacktestResult" class="paper-backtest-result" hidden></div>
+            </details>
+            <div class="paper-auto-panel">
+              <div class="paper-auto-head"><div><strong>自动模拟交易</strong><span>按实时行情自动运行本地纸面策略，不会下真实订单。</span></div><div class="paper-auto-badges"><span id="paperAutoStrategy" class="status-pill">策略未设置</span><span class="status-pill">A股 T+1</span><span id="paperAutoStatus" class="status-pill">已关闭</span></div></div>
+              <div class="paper-auto-form">
+                <label>运行频率<select id="paperAutoInterval"><option value="60">每 1 分钟</option><option value="180" selected>每 3 分钟</option><option value="300">每 5 分钟</option></select></label>
+                <label class="toggle-line"><input id="paperMarketHoursOnly" type="checkbox" checked /> 仅交易时段运行</label>
+                <button id="savePaperProfile" class="ghost-button" title="保存当前策略和自动参数，不改变自动交易开关">保存规则</button>
+                <button id="warmupPaperHistory" class="ghost-button" type="button" title="只补当前账户持仓与候选的历史日K，不抓取全市场">补齐候选历史</button>
+                <button id="togglePaperAuto" class="primary-button" title="保存当前策略并开启或关闭自动交易">开启自动交易</button>
+              </div>
+              <details class="paper-auto-limits">
+                <summary>高级限制（默认已配置）</summary>
+                <div class="paper-auto-limit-grid"><label>每日总操作<input id="paperMaxActions" type="number" min="1" max="50" value="10" /></label><label>每日买入<input id="paperMaxBuys" type="number" min="1" max="50" value="10" /></label><label>每日卖出<input id="paperMaxSells" type="number" min="1" max="50" value="10" /></label><label class="paper-loss-field">单日亏损熔断<span class="paper-input-unit"><input id="paperMaxLoss" type="number" min="0.1" max="20" step="0.1" value="3" /><b>%</b></span></label></div>
+              </details>
+              <small id="paperAutoMeta">自动扫描不等于每天交易；只有真实行情满足策略、仓位和风控条件时才会产生模拟订单。</small>
+            </div>
+            <details id="paperCustomRules" class="paper-custom-rules">
+              <summary>自定义筛选条件</summary>
+              <div class="paper-custom-tools"><label>组合<select id="paperCustomLogic"><option value="AND">全部满足</option><option value="OR">任一满足</option></select></label><label>范围<select id="paperCustomMarket"><option value="all">A股 + ETF</option><option value="A股">仅A股</option><option value="ETF">仅ETF</option></select></label><button id="addPaperCondition" class="text-button" type="button">添加条件</button><button id="useScreenerConditions" class="text-button" type="button">从条件筛选页载入</button><span id="paperCustomSummary">未设置条件时，只按行情自选范围筛选。</span></div>
+              <div id="paperConditionList" class="condition-list paper-condition-list"></div>
+            </details>
+            <div id="paperNotice" class="paper-notice">尚未设置初始资金，模拟策略不会执行。</div>
+            <div id="paperDecisionPanel" class="paper-decision-panel" hidden></div>
+            <section id="paperAutoDecision" class="paper-auto-decision" aria-live="polite"></section>
+            <section id="paperPortfolioOverview" class="paper-portfolio-overview" aria-live="polite"></section>
+          </section>
+          <section class="paper-status-section">
+            <div class="paper-section-heading"><div><h2>三、账户情况</h2><span>查看资金、收益、持仓和每次模拟操作的完整日志。</span></div></div>
+            <section class="paper-metrics" id="paperMetrics"></section>
+            <section class="paper-grid">
+            <article class="panel paper-chart-panel">
+              <div class="panel-title paper-chart-heading"><div><h2>资金曲线</h2><span id="paperChartMeta">设置账户后开始记录</span></div><div id="paperEquityWindowTabs" class="segment compact" role="tablist" aria-label="资金曲线周期"><button type="button" data-equity-window="today" role="tab">今日</button><button type="button" data-equity-window="all" role="tab">全部</button></div></div>
+              <svg id="paperEquityChart" viewBox="0 0 860 320" role="img" aria-label="模拟账户资金曲线"></svg>
+            </article>
+            <article class="panel">
+              <div class="panel-title"><h2>当前持仓</h2><span id="paperPositionCount">0 个</span></div>
+              <div id="paperPositions" class="paper-list"></div>
+            </article>
+            </section>
+            <section class="panel table-panel">
+            <div class="panel-title"><div><h2>操作日志</h2><span>每次模拟操作都会记录策略、理由、价格和数据来源</span></div><span id="paperOrderCount">0 条</span></div>
+            <div class="table-wrap"><table><thead><tr><th>时间</th><th>操作</th><th>代码</th><th>名称</th><th>数量</th><th>价格</th><th>成交额</th><th>手续费</th><th>盈亏</th><th>理由</th></tr></thead><tbody id="paperOrders"></tbody></table></div>
+            <div id="paperOrderPager" class="pager paper-order-pager"></div>
+            </section>
+          </section>
+        </section>
+
+        <section id="screener" class="view">
+          <section class="toolbar wrap">
+            <button class="template-button" data-template="overnight">隔夜套利</button>
+            <button class="template-button" data-template="tail">尾盘强势</button>
+            <button class="template-button" data-template="turnover">高换手异动</button>
+            <button class="template-button" data-template="reversal">超跌反转观察</button>
+            <button class="template-button" data-template="breakout">放量突破</button>
+            <button class="template-button" data-template="flow">资金活跃</button>
+            <button class="template-button" data-template="lowAbsorb">低吸反弹观察</button>
+            <label class="toggle-line"><input id="logicToggle" type="checkbox" /> 任一条件满足</label>
+            <button id="addCondition" class="ghost-button">添加条件</button>
+            <button id="runScreener" class="primary-button">应用筛选</button>
+            <button id="runScreenerResearch" class="ghost-button" type="button">整体研究评分</button>
+            <button id="resetScreener" class="ghost-button">重置</button>
+          </section>
+          <section class="panel">
+            <div class="panel-title">
+              <h2>筛选条件</h2>
+              <span>字段可改，模板只是预填</span>
+            </div>
+            <div id="conditionList" class="condition-list"></div>
+          </section>
+          <section class="panel prediction-panel">
+            <div class="panel-title">
+              <div>
+                <h2>单票预测</h2>
+                <span>输入代码或名称，按当前条件计算命中分</span>
+              </div>
+            </div>
+            <div class="prediction-form">
+              <div class="prediction-query-field"><label class="sr-only" for="predictQuery">AI 预测查询</label><input id="predictQuery" autocomplete="off" placeholder="例如：600000 / 优机股份 / 588050" /><div id="predictSuggestions" class="research-suggestions" hidden></div></div>
+              <button id="runPrediction" class="primary-button">预测命中分</button>
+            </div>
+            <div id="predictionResult" class="prediction-result empty-state">输入代码或名称后查看自用预测结果。</div>
+          </section>
+          <section class="panel">
+            <div class="panel-title">
+              <h2>显示字段</h2>
+              <span>控制结果表可见列</span>
+            </div>
+            <div id="columnToggles" class="column-toggles"></div>
+          </section>
+          <section class="panel table-panel">
+            <div class="panel-title">
+              <h2>候选结果</h2>
+              <span id="screenerCount">0 条</span><span id="screenerScoreMeta"></span>
+            </div>
+            <div id="screenerQuality" class="quality-panel"></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr id="stockHeader"></tr>
+                </thead>
+                <tbody id="stockRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="private" class="view">
+          <section class="panel research-panel research-command-panel">
+            <div class="panel-title">
+              <div>
+                <h2>单票研究</h2>
+                <span>代码/名称 + 历史 K 线 + 技术指标 + 资金线索，结果仅供个人研究</span>
+              </div>
+              <span class="status-pill">个人研究</span>
+            </div>
+            <div class="research-form">
+              <div class="research-query-field"><label class="sr-only" for="researchQuery">市场研究查询</label><input id="researchQuery" autocomplete="off" placeholder="输入代码或名称，例如 600000 / 贵州茅台" /><div id="researchSuggestions" class="research-suggestions" hidden></div></div>
+              <label class="sr-only" for="researchWindow">研究时间窗口</label><select id="researchWindow">
+                <option value="five">五日</option>
+                <option value="month" selected>月</option>
+                <option value="quarter">季</option>
+                <option value="year">年</option>
+                <option value="all">全部</option>
+              </select>
+              <button id="runResearch" class="primary-button">开始研究</button>
+            </div>
+            <div id="researchResult" class="research-result empty-state">输入股票代码或名称后查看研究结果。</div>
+          </section>
+          <section class="research-market-overview">
+            <article class="panel research-market-brief">
+              <div class="research-market-brief-head">
+                <div>
+                  <p class="eyebrow">Market assessment</p>
+                  <h2 id="privateMood">--</h2>
+                  <p id="privateSummary"></p>
+                  <small id="privateSignalMeta" class="signal-meta">加载中</small>
+                  <small id="privateSignalTiming" class="signal-timing">正在读取当前交易阶段...</small>
+                </div>
+                <div class="research-disclaimer">仅供个人研究，不构成投资建议。数据可能延迟或缺失。</div>
+              </div>
+              <section class="research-report-evidence" aria-labelledby="workbuddyReportsTitle">
+                <div class="research-report-evidence-head">
+                  <div>
+                    <p class="eyebrow">Scheduled research</p>
+                    <h3 id="workbuddyReportsTitle">定时市场报告</h3>
+                  </div>
+                  <span>WorkBuddy 定时生成 · 与深度研究分开读取</span>
+                </div>
+                <div class="market-report-panel" aria-live="polite">
+                  <div class="market-report-tabs" role="tablist" aria-label="市场报告时段">
+                    <button class="market-report-tab" type="button" data-market-report-session="pre-market" role="tab">盘前</button>
+                    <button class="market-report-tab" type="button" data-market-report-session="midday" role="tab">午间</button>
+                    <button class="market-report-tab" type="button" data-market-report-session="closing" role="tab">收盘</button>
+                    <span id="marketReportMeta" class="market-report-meta">正在读取...</span>
+                  </div>
+                  <div id="workbuddyReports" class="market-report-content" role="tabpanel"></div>
+                </div>
+              </section>
+            </article>
+            <article class="panel research-risk-panel">
+              <div><h2>风险雷达</h2><span id="riskRadarMeta">行情与公开资讯共同判断</span></div><button id="refreshRiskRadar" class="ghost-button compact-action" type="button">刷新资讯</button>
+              <div id="riskRadar" class="risk-list"></div>
+            </article>
+          </section>
+        </section>
+
+        <section id="watchlist" class="view">
+          <section class="market-full-head watchlist-head">
+            <div>
+              <p class="eyebrow">Personal watchlist</p>
+              <h2>行情自选</h2>
+              <span>集中查看自选股票与 ETF 的实时行情、历史 K 线和成交量。</span>
+            </div>
+            <div class="market-full-actions"><button class="ghost-button view-link" data-target-view="home">返回行情工作区</button></div>
+          </section>
+          <section class="watchlist-layout">
+            <article class="panel watchlist-board-panel">
+              <div class="panel-title">
+                <div><h2>我的自选</h2><span id="watchlistMeta">加载中</span></div>
+                <label class="sr-only" for="watchlistSearch">筛选自选</label><input id="watchlistSearch" class="compact-input" placeholder="筛选名称或代码" />
+              </div>
+              <div class="watchlist-group-toolbar">
+                <div class="watchlist-group-nav"><span class="watchlist-group-label">分组</span><div id="watchlistGroups" class="watchlist-groups" role="tablist" aria-label="自选分组"></div></div>
+                <div class="watchlist-group-actions">
+                  <button id="watchlistAddGroup" class="ghost-button compact-action" type="button">新建分组</button>
+                  <button id="watchlistRenameGroup" class="ghost-button compact-action" type="button">编辑分组</button>
+                </div>
+              </div>
+              <div class="watchlist-table-head" aria-hidden="true"><span>标的</span><span>现价 / 涨跌</span><span>成交额</span><span>分组 / 操作</span></div>
+              <div id="watchlistRows" class="watchlist-rows"></div>
+            </article>
+            <article class="panel watchlist-detail-panel">
+              <div class="panel-title">
+                <div><h2 id="watchlistDetailTitle">选择一个标的</h2><span id="watchlistDetailMeta">自选行情详情</span></div>
+                <select id="watchlistWindow" aria-label="自选历史周期">
+                  <option value="five">五日</option><option value="month" selected>月</option><option value="quarter">季</option><option value="year">年</option><option value="all">全部</option>
+                </select>
+              </div>
+              <div id="watchlistQuote" class="watchlist-quote empty-state">点击左侧自选标的查看行情。</div>
+              <div class="watchlist-detail-actions"><button id="watchlistOpenResearch" class="ghost-button compact-action" type="button" disabled>加载完整研究</button></div>
+              <div class="watchlist-chart-wrap"><svg id="watchlistChart" viewBox="0 0 860 360" role="img" aria-label="自选历史K线"></svg></div>
+              <section id="watchlistResearchResult" class="watchlist-research-result empty-state" hidden>选择标的后可在此加载完整研究。</section>
+            </article>
+          </section>
+        </section>
+
+        <section id="wechat" class="view legacy-removed" aria-hidden="true">
+          <section class="workflow-steps" aria-label="公众号工作流程">
+            <div class="workflow-step active"><b>1</b><span>选时段</span></div>
+            <div class="workflow-step"><b>2</b><span>定主题</span></div>
+            <div class="workflow-step"><b>3</b><span>生成文章</span></div>
+            <div class="workflow-step"><b>4</b><span>审稿排版</span></div>
+            <div class="workflow-step"><b>5</b><span>复制发布</span></div>
+          </section>
+          <section class="panel">
+            <div class="panel-title">
+              <div>
+                <h2>公众号生成器</h2>
+                <span>选一个主题，系统自动带入模块和写作要求</span>
+              </div>
+            </div>
+            <div class="wechat-generator">
+              <label>
+                文章类型
+                <select id="wechatArticleType">
+                  <option>早盘观察</option>
+                  <option>午间快评</option>
+                  <option selected>收盘复盘</option>
+                  <option>周度总结</option>
+                  <option>专题解读</option>
+                </select>
+              </label>
+              <label>
+                文章写法
+                <select id="wechatStyle">
+                  <option>快讯资讯型</option>
+                  <option selected>数据解读型</option>
+                  <option>通俗解释型</option>
+                  <option>深度评论型</option>
+                </select>
+              </label>
+              <label>
+                关键词
+                <input id="wechatKeywords" placeholder="例如：A股板块资金、ETF、隔夜美股" />
+              </label>
+              <label class="wide">
+                写作要求
+                <input id="wechatRequirements" placeholder="可选：通俗一点，先讲结论，再讲数据和风险" />
+              </label>
+              <div class="topic-presets wide" aria-label="常用主题">
+                <span>常用主题</span>
+                <button type="button" class="topic-preset" data-keywords="今日A股" data-requirements="用通俗语言讲清指数、板块涨跌和资金变化，先讲结论，再讲依据和风险。" data-modules="A股,板块资金,ETF观察,风险提示">今日A股</button>
+                <button type="button" class="topic-preset" data-keywords="板块资金动向" data-requirements="重点解释资金流入流出与板块涨跌是否一致，不写个股推荐。" data-modules="A股,板块资金,ETF观察,风险提示">板块资金</button>
+                <button type="button" class="topic-preset" data-keywords="ETF资金观察" data-requirements="重点写ETF涨跌、成交额和资金线索，少用术语。" data-modules="A股,ETF观察,板块资金,风险提示">ETF观察</button>
+                <button type="button" class="topic-preset" data-keywords="隔夜美股与A股" data-requirements="先讲海外市场，再讲对A股风险偏好的可能影响，明确数据时间。" data-modules="美股,A股,港股/海外,风险提示">隔夜市场</button>
+              </div>
+              <div class="module-picker wide" id="wechatModulePicker"></div>
+            </div>
+          </section>
+          <section class="toolbar wrap">
+            <button id="generateDraft" class="primary-button">生成文章</button>
+            <button id="reviewDraft" class="ghost-button">检查文章</button>
+            <button id="saveDraft" class="ghost-button">保存版本</button>
+            <button id="copyDraft" class="ghost-button">复制到公众号</button>
+          </section>
+          <section class="wechat-next-step">
+            <strong>生成后按这个顺序：</strong>
+            <span>生成文章 → 生成封面 → 选择正文行情图 → 检查文章 → 保存版本 → 复制到公众号后台</span>
+          </section>
+          <section class="wechat-workbench">
+            <article class="panel draft-panel">
+              <div class="panel-title">
+                <div>
+                  <h2>公众号公开草稿</h2>
+                  <span>Markdown 原文，不含自用预测</span>
+                </div>
+              </div>
+              <textarea id="draftText"></textarea>
+            </article>
+            <article class="panel preview-panel">
+              <div class="panel-title">
+                <div>
+                  <h2>排版预览</h2>
+                  <span>复制到公众号前检查结构</span>
+                </div>
+              </div>
+              <div id="imagePrompt" class="image-prompt"></div>
+              <div id="bodyImageTools" class="body-image-tools">
+                <div class="body-image-head">
+                  <div>
+                    <strong>正文配图</strong>
+                    <span>优先使用当前真实行情绘制，不调用 AI 补行情数字。</span>
+                  </div>
+                  <span id="bodyImageStatus">待生成</span>
+                </div>
+                <div class="body-image-controls">
+                  <select id="bodyImageType">
+                    <option value="market-overview">行情全览</option>
+                    <option value="trend">大盘趋势</option>
+                    <option value="sector-flow">板块资金</option>
+                    <option value="etf-rank">ETF排行</option>
+                  </select>
+                  <button id="generateBodyMarketImage" class="ghost-button">生成正文行情图</button>
+                </div>
+              </div>
+              <div id="draftPreview" class="article-preview"></div>
+            </article>
+          </section>
+          <section class="dashboard-grid">
+            <article class="panel">
+              <div class="panel-title">
+                <h2>资讯素材池</h2>
+                <span id="newsCount">0 条</span>
+              </div>
+              <div class="news-form">
+                <input id="newsTitle" placeholder="资讯标题" />
+                <input id="newsUrl" placeholder="原文链接，可选" />
+                <input id="newsSource" placeholder="来源，例如 第一财经 / 手动摘录" />
+                <select id="newsCategory">
+                  <option>市场资讯</option>
+                  <option>A股</option>
+                  <option>美股</option>
+                  <option>板块资金</option>
+                  <option>ETF</option>
+                  <option>风险提示</option>
+                </select>
+                <textarea id="newsSummary" placeholder="摘要或粘贴正文片段，不搬运未授权全文"></textarea>
+                <button id="addNews" class="ghost-button">加入素材池</button>
+              </div>
+              <div id="newsList" class="news-list"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-title">
+                <h2>审稿结果</h2>
+                <span id="reviewStatus">待检查</span>
+              </div>
+              <div id="wechatPipeline" class="pipeline-panel"></div>
+              <div id="reviewPanel" class="review-panel"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-title">
+                <h2>素材库</h2>
+                <span id="assetCount">0 个</span>
+              </div>
+              <div class="asset-form">
+                <input id="assetTitle" placeholder="素材标题" />
+                <select id="assetType">
+                  <option value="封面">封面</option>
+                  <option value="正文图">正文图</option>
+                  <option value="二维码">二维码</option>
+                  <option value="免责声明图">免责声明图</option>
+                  <option value="品牌图">品牌图</option>
+                </select>
+                <input id="assetPath" placeholder="本地图片路径或 /assets/ 文件名" />
+                <input id="assetPrompt" placeholder="AI 配图提示词（可选）" />
+                <button id="addAsset" class="ghost-button">登记素材</button>
+              </div>
+              <div class="video-form">
+                <div>
+                  <strong>视频素材任务</strong>
+                  <span>用于公众号视频号/正文素材，默认不插入正文。</span>
+                </div>
+                <textarea id="videoPrompt" placeholder="例如：简约金融报纸风，A股收盘复盘，抽象行情曲线、资金流动、城市夜景，6秒横版，不出现收益承诺和股票代码。"></textarea>
+                <button id="generateVideo" class="ghost-button">生成视频任务</button>
+                <small id="videoStatus">待生成</small>
+              </div>
+              <div id="assetList" class="asset-list"></div>
+            </article>
+          </section>
+          <section class="panel">
+            <div class="panel-title">
+              <h2>历史版本</h2>
+              <span>最近 20 条</span>
+            </div>
+            <div id="draftHistory" class="history-list"></div>
+          </section>
+        </section>
+
+        <section id="admin" class="view">
+          <section class="panel admin-head">
+            <div><h2>用户管理</h2><span>仅管理员可见；成员只能查看自己的模拟账户。</span></div>
+            <button id="refreshAdminOverview" class="ghost-button" type="button">刷新成员状态</button>
+          </section>
+          <section class="admin-grid">
+            <article class="panel">
+              <div class="panel-title"><h2>创建成员</h2><span>成员只能使用自己的账户和自定义策略</span></div>
+              <form id="createMemberForm" class="admin-form">
+                <label>用户名<input id="memberUsername" required /></label>
+                <label>初始密码<input id="memberPassword" type="password" minlength="6" required /></label>
+                <button class="primary-button" type="submit">创建账号</button>
+              </form>
+            </article>
+            <article class="panel">
+              <div class="panel-title"><h2>成员列表</h2><span id="adminUserCount">0 人</span></div>
+              <div id="adminUsers" class="admin-users"></div>
+              <div id="adminUserPager" class="pager admin-user-pager"></div>
+            </article>
+          </section>
+          <section class="panel table-panel">
+            <div class="panel-title admin-accounts-toolbar"><div><h2>成员模拟情况</h2><span id="adminAccountCount">0 个账户</span></div><div class="admin-account-filters"><select id="adminAccountUserFilter" aria-label="选择用户名"><option value="">全部用户名</option></select><input id="adminAccountSearch" placeholder="筛选账户或策略" aria-label="筛选账户或策略" /><select id="adminAccountSort" aria-label="成员模拟情况排序"><option value="updated_at:desc">最近更新</option><option value="equity:desc">总资产从高到低</option><option value="today_pnl:desc">今日盈亏从高到低</option><option value="total_pnl:desc">累计收益从高到低</option><option value="positions:desc">持仓数从多到少</option><option value="orders:desc">操作数从多到少</option></select></div></div>
+            <div id="adminAccounts" class="admin-accounts"></div>
+          </section>
+        </section>
+
+        <section id="settings" class="view">
+          <section class="panel settings-grid">
+            <div class="settings-head">
+              <div>
+                <h2>本地设置</h2>
+                <p>真实数据优先；AI 配置保存在本地后端运行配置，不写入前端源码。</p>
+              </div>
+              <button id="saveSettings" class="primary-button">保存配置</button>
+            </div>
+            <section class="settings-status">
+              <label>
+                服务地址
+                <input id="serverStatus" value="检查中" disabled />
+              </label>
+              <label>
+                数据源状态
+                <input id="dataSourceStatus" value="检查中" disabled />
+              </label>
+              <label>
+                数据库位置
+                <input id="databasePath" value="检查中" disabled />
+              </label>
+            </section>
+            <section class="settings-actions">
+              <button id="checkFutu" class="ghost-button">检查 Futu OpenD</button>
+              <button id="backupData" class="ghost-button">备份历史数据</button>
+              <button class="ghost-button refresh-scope" data-scope="ashare">刷新A股/代码</button>
+              <button class="ghost-button refresh-scope" data-scope="etf">刷新ETF</button>
+              <button class="ghost-button refresh-scope" data-scope="sector">刷新板块</button>
+              <button class="ghost-button refresh-scope" data-scope="global">刷新海外</button>
+              <button class="ghost-button refresh-scope" data-scope="history">刷新历史K线</button>
+              <button class="ghost-button refresh-scope" data-scope="sector-members">刷新板块成分</button>
+              <button class="ghost-button refresh-scope" data-scope="all">全量刷新</button>
+            </section>
+            <section class="runtime-health-panel" aria-labelledby="runtimeHealthTitle">
+              <div class="panel-title"><div><h2 id="runtimeHealthTitle">运行与容量</h2><span id="runtimeHealthMeta">正在检查本机服务、数据新鲜度与缓存容量</span></div><div class="runtime-health-actions"><button id="checkSystemHealth" class="ghost-button" type="button">立即检查</button><button id="testFeishu" class="ghost-button" type="button">测试飞书</button><button id="runMaintenance" class="ghost-button" type="button">手动维护</button></div></div>
+              <div id="runtimeHealthGrid" class="runtime-health-grid"></div>
+              <div id="maintenanceHistory" class="maintenance-history"></div>
+            </section>
+            <section class="model-presets">
+              <div>
+                <strong>模型方案</strong>
+                <span>只切换供应商、Base URL 和模型名，已保存的 Key 不会被覆盖。</span>
+              </div>
+              <button class="ghost-button model-preset" data-preset="hybrid">混合版</button>
+              <button class="ghost-button model-preset" data-preset="agnes">Agnes</button>
+              <button class="ghost-button model-preset" data-preset="writer">Shanqu</button>
+            </section>
+            <section class="settings-form">
+              <article>
+                <h3>研究摘要模型（可选）</h3>
+                <label>供应商 <input id="aiProvider" placeholder="Shanqu / OpenAI / Agnes" /></label>
+                <label>Base URL <input id="aiBaseUrl" placeholder="https://gw-ai.shanqu.cc/v1" /></label>
+                <label>模型 <input id="aiModel" placeholder="gpt-5.4" /></label>
+                <label>API Key <input id="aiApiKey" type="password" placeholder="留空则不修改当前 Key" autocomplete="off" /></label>
+                <small id="aiKeyPreview">未配置</small>
+              </article>
+            </section>
+          </section>
+        </section>
+      </main>
+    </div>
+    <div id="watchlistGroupModal" class="modal-backdrop" aria-hidden="true">
+      <div class="modal-panel watchlist-group-modal-panel" role="dialog" aria-modal="true" aria-labelledby="watchlistGroupModalTitle">
+        <div class="modal-head">
+          <div><p class="eyebrow">Watchlist groups</p><h2 id="watchlistGroupModalTitle">新建自选分组</h2></div>
+          <button id="closeWatchlistGroupModal" class="ghost-button" type="button">关闭</button>
+        </div>
+        <form id="watchlistGroupForm" class="watchlist-group-form">
+          <label>分组名称<input id="watchlistGroupName" required maxlength="24" placeholder="例如：ETF观察、短线关注" /></label>
+          <small id="watchlistGroupHint">分组名称最多 24 个字符。</small>
+          <div class="watchlist-group-form-actions"><button id="cancelWatchlistGroup" class="ghost-button" type="button">取消</button><button class="primary-button" type="submit">保存</button></div>
+        </form>
+      </div>
+    </div>
+    <div id="sectorModal" class="modal-backdrop" aria-hidden="true">
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="sectorModalTitle">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Sector detail</p>
+            <h2 id="sectorModalTitle">板块详情</h2>
+          </div>
+          <button id="closeSectorModal" class="ghost-button">关闭</button>
+        </div>
+        <div id="sectorModalBody" class="sector-modal-body"></div>
+      </div>
+    </div>
+    <div id="paperStrategyModal" class="modal-backdrop" aria-hidden="true">
+      <div class="modal-panel paper-strategy-modal-panel" role="dialog" aria-modal="true" aria-labelledby="paperStrategyModalTitle">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Strategy library</p>
+            <h2 id="paperStrategyModalTitle">策略总览</h2>
+          </div>
+          <button id="closePaperStrategyModal" class="ghost-button" type="button">关闭</button>
+        </div>
+        <div id="paperStrategyModalBody" class="strategy-library" aria-live="polite"></div>
+      </div>
+    </div>
+    <div id="adminAccountModal" class="modal-backdrop" aria-hidden="true">
+      <div class="modal-panel admin-account-modal-panel" role="dialog" aria-modal="true" aria-labelledby="adminAccountModalTitle">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Paper account detail</p>
+            <h2 id="adminAccountModalTitle">成员模拟详情</h2>
+          </div>
+          <button id="closeAdminAccountModal" class="ghost-button" type="button">关闭</button>
+        </div>
+        <div id="adminAccountModalBody" class="admin-account-modal-body"></div>
+      </div>
+    </div>
+    <div id="adminMemberModal" class="modal-backdrop" aria-hidden="true">
+      <div class="modal-panel admin-member-modal-panel" role="dialog" aria-modal="true" aria-labelledby="adminMemberModalTitle">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Member account</p>
+            <h2 id="adminMemberModalTitle">编辑成员</h2>
+          </div>
+          <button id="closeAdminMemberModal" class="ghost-button" type="button">关闭</button>
+        </div>
+        <form id="adminMemberForm" class="admin-member-form">
+          <input id="adminMemberId" type="hidden" />
+          <label>登录账号<input id="adminMemberUsername" required /></label>
+          <div class="admin-password-status"><div><span>当前密码</span><strong>已设置 · 不可读取明文</strong></div><button id="toggleAdminPasswordEdit" class="text-button" type="button">修改密码</button></div>
+          <div id="adminMemberPasswordEditor" class="admin-password-editor" hidden>
+            <label>新密码<input id="adminMemberPassword" type="password" minlength="6" autocomplete="new-password" placeholder="至少 6 位" /></label>
+            <label>确认新密码<input id="adminMemberPasswordConfirm" type="password" minlength="6" autocomplete="new-password" placeholder="再次输入新密码" /></label>
+            <button id="toggleAdminPasswordVisibility" class="text-button password-visibility-button" type="button">显示密码</button>
+          </div>
+          <label class="toggle-line"><input id="adminMemberActive" type="checkbox" /> 允许登录</label>
+          <small>关闭“允许登录”后，成员会被停用；修改密码后需要使用新密码重新登录。</small>
+          <div class="admin-member-actions"><button id="cancelAdminMember" class="ghost-button" type="button">取消</button><button class="primary-button" type="submit">保存修改</button></div>
+        </form>
+      </div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <div id="progressModal" class="progress-backdrop" aria-hidden="true">
+      <div class="progress-dialog" role="status" aria-live="polite">
+        <div class="progress-spinner"></div>
+        <strong id="progressTitle">正在处理</strong>
+        <span id="progressMessage">请稍候，页面正在读取数据。</span>
+      </div>
+    </div>
+    <script src="/app.js?v=20260814-beginner-strategy-v1"></script>
+  </body>
+</html>

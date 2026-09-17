@@ -1,0 +1,28 @@
+node_modules/
+
+.env
+.env.*
+!.env.example
+
+data/*
+!data/assets/
+data/assets/*
+!data/assets/.gitkeep
+
+output/
+.playwright-cli/
+research-center-*.png
+*.log
+__pycache__/
+*.pyc
+
+# Keep the public repository focused on current setup and architecture docs.
+docs/*
+!docs/跨电脑部署.md
+!docs/架构与边界.md
+
+# Local Windows/editor state
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
